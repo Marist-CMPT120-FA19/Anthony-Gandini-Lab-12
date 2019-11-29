@@ -5,13 +5,13 @@ from appjar import gui
 class Account:
 
     def __init__(self , id , pin , savings , checking):
-        self.ID = id
+        self.ID = str(id)
         self.PIN = pin
-        self.savings = savings
-        self.checking = checking
+        self.savings = int(savings)
+        self.checking = int(checking)
         
     def getID(self):
-        return self.ID
+        return str(self.ID)
         
     def getPIN(self):
         return self.PIN
@@ -22,46 +22,31 @@ class Account:
     def getChecking(self):
         return self.checking
         
-    def withdraw(account , ammount):
+    def withdraw(self , account , ammount):
         #True = savings account
-        if acccount:
-            if self.savings >= ammount:
-                self.savings -= ammount
-            else:
-                improperAmmount()
+        if account:
+            self.savings -= int(ammount)
         else:
-            if self.checking >= ammount:
-                self.checking -= ammount
-            else:
-                improperAmmount()
+            self.checking -= int(ammount)
            
-    def deposit(account , ammount):
+    def deposit(self , account , ammount):
         #True = savings account
-        if acccount:
-            self.savings += ammount
+        if account:
+            self.savings += int(ammount)
         else:
-            self.checking += ammount
+            self.checking += int(ammount)
            
-    def transfer(fromAccount , ammount):
+    def transfer(self , fromAccount , ammount):
         #True = savings account to checking
         if fromAccount:
-            if self.savings >= ammount:
-                self.savings -= ammount
-                self.checking += ammount
-            else:
-                improperAmmount()
+            self.savings -= int(ammount)
+            self.checking += int(ammount)
         else:
-            if self.checking >= ammount:
-                self.savings += ammount
-                self.checking -= ammount
-            else:
-                improperAmmount()
+            self.savings += int(ammount)
+            self.checking -= int(ammount)
                 
-    def toString():
-        return string(self.ID + "\t" + self.PIN + "\t" + self.savings + "\t" + self.checking)
-            
-    def improperAmmount():
-        print("The ammount requested is more than there is available.")
+    def toString(self):
+        return str(str(self.ID) + "\t" + str(self.PIN) + "\t" + str(self.savings) + "\t" + str(self.checking))
             
 def confirmationMenu(acc):
     
@@ -75,13 +60,15 @@ def confirmationMenu(acc):
         else:
             app.stop()
             
-    #updateFile(acc.toString() , acc)
+    updateFile(acc.toString() , acc)
             
     app = gui("Automated Teller Machine" , "400x200")
     app.setBg("red")
     
     app.addLabel("confirm" , "Confirmation Page")
     app.setLabelBg("confirm" , "white")
+    app.addLabel("msg" , "Transaction Complete")
+    app.setLabelBg("msg" , "white")
     
     app.addButtons(["Continue" , "Switch Account"] , press)
     app.addButtons(["Quit"] , press)
@@ -93,21 +80,47 @@ def transactionMenu(type , boo , acc):
     def press(button):
         if boo:
             if button == type + " savings":
-                app.stop()
-                confirmationMenu(acc)
+                if type == "To":
+                    acc.deposit(True , app.getEntry("Ammount"))
+                else:
+                    if int(app.getEntry("Ammount")) < acc.getSavings():
+                        acc.withdraw(True , app.getEntry("Ammount"))
+                        app.stop()
+                        confirmationMenu(acc)
+                    else:
+                        app.startSubWindow("error")
+                        app.errorBox("TransactionError" , "Not enough funds in savings account!")
+                        app.destroyAllSubWindows()
             elif button == type + " checking":
-                app.stop()
-                confirmationMenu(acc)
+                if type == "To":
+                    acc.deposit(False , app.getEntry("Ammount"))
+                else:
+                    if int(app.getEntry("Ammount")) < acc.getChecking():
+                        acc.withdraw(False , app.getEntry("Ammount"))
+                        app.stop()
+                        confirmationMenu(acc)
+                    else:
+                        app.startSubWindow("error")
+                        app.errorBox("TransactionError" , "Not enough funds in checking account!")
+                        app.destroyAllSubWindows()
         else:
             if button == type + " savings to checking":
-                print(app.getEntry("Ammount"))
-                acc.transfer(True , app.getEntry("Ammount"))
-                app.stop()
-                confirmationMenu(acc)
+                if int(app.getEntry("Ammount")) < acc.getSavings():
+                    acc.transfer(True , app.getEntry("Ammount"))
+                    app.stop()
+                    confirmationMenu(acc)
+                else:
+                    app.startSubWindow("error")
+                    app.errorBox("TransactionError" , "Not enough funds in savings account!")
+                    app.destroyAllSubWindows()
             elif button == type + " checking to savings":
-                acc.transfer(False , (app.getEntry("Ammount")))
-                app.stop()
-                confirmationMenu(acc)
+                if int(app.getEntry("Ammount")) < acc.getChecking():
+                    acc.transfer(False , (app.getEntry("Ammount")))
+                    app.stop()
+                    confirmationMenu(acc)
+                else:
+                    app.startSubWindow("error")
+                    app.errorBox("TransactionError" , "Not enough funds in checking account!")
         if button == "Back":
             app.stop()
             actionMenu(acc)
@@ -146,9 +159,9 @@ def actionMenu(acc):
     app = gui("Automated Teller Machine" , "400x200")
     app.setBg("blue")
     
-    app.addLabel("savingsBal" , ("Savings Account Balance: " + acc.getSavings()))
+    app.addLabel("savingsBal" , ("Savings Account Balance:" , acc.getSavings()))
     app.setLabelBg("savingsBal" , "white")
-    app.addLabel("checkingBal" , ("Checking Account Balance: " + acc.getChecking()))
+    app.addLabel("checkingBal" , ("Checking Account Balance:" , acc.getChecking()))
     app.setLabelBg("checkingBal" , "white")
     app.addButtons(["Deposit" , "Withdraw" , "Transfer" , "Back"] , press)
     
@@ -199,11 +212,22 @@ def createAccount(info):
     
 def updateFile(newLine , acc):
     accountsFile = open("accounts.txt" , "r")
-    counter = 0
+    counter = -1
+    newFile = []
     for i in accountsFile:
         counter += 1
-        if i.split("\t")[0] == acc.getID:
-            break
+        newFile = newFile + [i]
+        if i.split("\t")[0] == acc.getID():
+            newFile[counter] = newLine
+        else:
+            newFile[counter] = i
+    accountsFile.close()
+    accountsFile = open("accounts.txt" , "w")
+    for i in range(counter+1):
+        accountsFile.write(newFile[i])
+        if i == 0:
+            accountsFile.write("\n")
+    accountsFile.close()
     
 def main():
     mainMenu()
