@@ -82,6 +82,8 @@ def transactionMenu(type , boo , acc):
             if button == type + " savings":
                 if type == "To":
                     acc.deposit(True , app.getEntry("Ammount"))
+                    app.stop()
+                    confirmationMenu(acc)
                 else:
                     if int(app.getEntry("Ammount")) < acc.getSavings():
                         acc.withdraw(True , app.getEntry("Ammount"))
@@ -94,6 +96,8 @@ def transactionMenu(type , boo , acc):
             elif button == type + " checking":
                 if type == "To":
                     acc.deposit(False , app.getEntry("Ammount"))
+                    app.stop()
+                    confirmationMenu(acc)
                 else:
                     if int(app.getEntry("Ammount")) < acc.getChecking():
                         acc.withdraw(False , app.getEntry("Ammount"))
